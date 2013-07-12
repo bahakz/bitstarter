@@ -22,6 +22,8 @@ References:
 */
 
 var fs = require('fs');
+var rest = require('restler');
+var util = require('util');
 var program = require('commander');
 var cheerio = require('cheerio');
 var HTMLFILE_DEFAULT = "index.html";
@@ -66,9 +68,23 @@ if(require.main == module) {
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
         .parse(process.argv);
+
+ if (program.url != null) {
+        rest.get(program.url).on('complete', function(result) {
+            if (result instanceof Error) {
+               console.log('Error: ' + result.message);
+            } else {
+                fs.writeFileSync('htmlFile.html', result);
+                var checkJson = checkHtmlFile('htmlFile.html', program.checks);
+                var outJson = JSON.stringify(checkJson, null, 4);
+                console.log(outJson);
+            }
+        });
+    } else {
     var checkJson = checkHtmlFile(program.file, program.checks);
     var outJson = JSON.stringify(checkJson, null, 4);
     console.log(outJson);
+  }
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }
